@@ -45,6 +45,19 @@ class FilterBuilder
   }
 
   /**
+   * Equal float operator for numeric fields
+   *
+   * @param  string $field
+   * @param  float $value
+   * @return FilterBuilder
+   */
+  public function equalNumeric(string $field, float $value): FilterBuilder
+  {
+    $this->filters = array_merge($this->filters, [$field => $value]);
+    return $this;
+  }
+
+  /**
    * Not Equal operator
    *
    * @param  string $field
@@ -58,6 +71,19 @@ class FilterBuilder
   }
 
   /**
+   * Not Equal Number operator
+   *
+   * @param  string $field
+   * @param  int $value
+   * @return FilterBuilder
+   */
+  public function notEqualNumber(string $field, float $value): FilterBuilder
+  {
+    $this->setFilterOperator($field, $value, '$ne');
+    return $this;
+  }
+  // TODO NOT Between?
+  /**
    * Between operator for string values
    *
    * @param  string $field
@@ -68,6 +94,21 @@ class FilterBuilder
   public function between(string $field, string $startValue, string $endValue): FilterBuilder
   {
     $this->filters = array_merge($this->filters, 
+      [$field => ['$gte' => $startValue, '$lte' => $endValue]]);
+    return $this;
+  }
+
+  /**
+   * Between operator for string values
+   *
+   * @param  string $field
+   * @param  int $startValue
+   * @param  int $endValue
+   * @return FilterBuilder
+   */
+  public function betweenNumber(string $field, float $startValue, float $endValue): FilterBuilder
+  {
+    $this->filters = array_merge($this->filters,
       [$field => ['$gte' => $startValue, '$lte' => $endValue]]);
     return $this;
   }
@@ -162,7 +203,24 @@ class FilterBuilder
     if (strlen($value) == 0) {
       return $this;
     }
-    $regex = $this->getRegex($value);
+    $regex = $this->getRegex('%' . $value . '%');
+    $this->filters = array_merge($this->filters, [$field => $regex]);
+    return $this;
+  }
+
+  /**
+   * Like not operator
+   *
+   * @param  string $field
+   * @param  string $value
+   * @return FilterBuilder
+   */
+  public function likeNot(string $field, string $value): FilterBuilder
+  {
+    if (strlen($value) == 0) {
+      return $this;
+    }
+    $regex = $this->getNegativeRegex('%' . $value . '%');
     $this->filters = array_merge($this->filters, [$field => $regex]);
     return $this;
   }
@@ -205,7 +263,7 @@ class FilterBuilder
     if (strlen($value) == 0 || count($headers) == 0) {
       return $this;
     }
-    $regex = $this->getRegex($value);
+    $regex = $this->getRegex($value . '%');
     $filter = [];
     foreach($headers as $header) {
       $filter['$or'][] = [$header => $regex];
@@ -227,7 +285,21 @@ class FilterBuilder
     $value = str_replace('%', '.*', $value);
     return new Regex($value);
   }
-  
+
+  /**
+   * Get negative regex expression
+   *
+   * @param  string $value
+   * @return Regex
+   */
+  private function getNegativeRegex(string $value): Regex
+  {
+    $value = $this->getStartNegativeDelimiter($value);
+    $value = $this->getEndNegativeDelimiter($value);
+    $value = str_replace('%', '.*', $value);
+    return new Regex($value);
+  }
+
   /**
    * Set a comparision operator to the filter
    *
@@ -259,6 +331,24 @@ class FilterBuilder
   }
 
   /**
+   * Get start negative delimiter for regex expression
+   *
+   * @param  string $value
+   * @return string
+   */
+  private function getStartNegativeDelimiter(string $value): string
+  {
+    if ($value[0] === '%') {
+      $value = ltrim($value, '%');
+      $value = '^(?!.*' . $value;
+    }
+    else {
+      $value = '^' . $value;
+    }
+    return $value;
+  }
+
+  /**
    * Get end delimiter for regex expression
    *
    * @param  string $value
@@ -275,7 +365,25 @@ class FilterBuilder
     }
     return $value;
   }
-  
+
+  /**
+   * Get end negative delimiter for regex expression
+   *
+   * @param  string $value
+   * @return string
+   */
+  private function getEndNegativeDelimiter(string $value): string
+  {
+    if ($value[strlen($value) - 1] === '%') {
+      $value = rtrim($value, '%');
+      $value .= ').*$';
+    }
+    else {
+      $value = $value . '$';
+    }
+    return $value;
+  }
+
   /**
    * Glue filters by an operator ($and, $or)
    *

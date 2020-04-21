@@ -1,14 +1,14 @@
 {
-    "require-dev": {
-        "phpunit/phpunit": "^9.0"
-    },
     "require": {
         "mongodb/mongodb": "^1.6"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^7.5"
+    },
     "autoload":{
-        "psr-4": {
-            "Lib\\": "lib/",
-            "Services\\": "services/"
-        }
-    }
+          "psr-4": {
+              "Lib\\": "lib/",
+              "Services\\": "services/"
+          }
+      }
 }

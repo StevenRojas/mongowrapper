@@ -90,7 +90,16 @@ class CollectionService
     $doc = $this->wrapper->get($collectionName, []);
     return array_keys($doc);
   }
-  
+
+
+  public function removeAllCollection(string $collectionName, $jobName): bool {
+    if (!$this->wrapper->connect()) {
+      throw new Exception('Unable to connect to MongoDB Server');
+    }
+    $this->wrapper->removeAllCollection($collectionName, $jobName);
+    return true;
+  }
+
   /**
    * validate and set pagination
    *

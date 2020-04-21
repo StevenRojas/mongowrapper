@@ -4,6 +4,10 @@ namespace Lib;
 
 use Exception;
 use MongoDB\Client;
+use MongoDB\Driver\BulkWrite;
+use MongoDB\Driver\Exception\BulkWriteException;
+use MongoDB\Driver\Manager;
+use MongoDB\Driver\WriteConcern;
 
 class MongoDbWrapper
 {
@@ -19,9 +23,9 @@ class MongoDbWrapper
 
   public function connect(): bool
   {
-    $config = parse_ini_file(getcwd() . "/config/mongodb.ini");    
+    $config = parse_ini_file(APPPATH . "libraries/mongowrapper/config/mongodb.ini");
     $this->database = $config['database'];
-    $uri = 'mongodb://' . $config['host'] . ':' . $config['port'];
+    $uri = 'mongodb://' . $config['host'] . ':' . $config['port'] . '/iviepages';
     $options = [
       'username' => $config['user'],
       'password' => $config['pass'],
@@ -113,5 +117,64 @@ class MongoDbWrapper
     $doc = $document->getArrayCopy();
     $doc['_id'] = $doc['_id']->jsonSerialize()['$oid']; 
     return $doc;
+  }
+
+  /**
+   * Remove the current content in participationList collection for replace later
+   *
+   * @param string $collectionName
+   * @param $jobNumber
+   * @return bool
+   * @throws Exception
+   */
+  public function removeAllCollection(string $collectionName, $jobNumber): bool {
+    try {
+      $collection = $this->client->selectCollection($this->database, $collectionName);
+      $deleteResult = $collection->deleteMany(['job' => $jobNumber]);
+      \LyLogProcess::log("Deleted %d document(s) " . $deleteResult->getDeletedCount());
+    } catch (Exception $e) {
+      throw new Exception("It's not possible, truncate the database, please contact with you administrator");
+    }
+
+    return true;
+  }
+
+  /**
+   * Write Bulk and execute the bulk queries
+   *
+   * @param $csv
+   * @param $collectionName
+   * @return int|null
+   * @throws Exception
+   */
+  public function bulkWrite($csv, $collectionName) {
+    try{
+      $bulk = new BulkWrite(['ordered' => true]);
+      foreach ($csv as $line) {
+        $bulk->insert($line);
+      }
+      $config = parse_ini_file(APPPATH . "libraries/mongowrapper/config/mongodb.ini");
+      $this->database = $config['database'];
+      $uri = 'mongodb://' . $config['host'] . ':' . $config['port'] . '/iviepages';
+      $options = $this->getOptions($config);
+      $manager = new Manager($uri, $options);
+      $writeConcern = new WriteConcern(WriteConcern::MAJORITY, 6000);
+      $result = $manager->executeBulkWrite($this->database . '.' . $collectionName, $bulk, $writeConcern);
+
+      return $result->getInsertedCount();
+
+    } catch (BulkWriteException $e) {
+      throw new Exception($e->getWriteResult());
+    } catch (\MongoDB\Driver\Exception\Exception $e) {
+      throw new Exception($e->getMessage());
+    }
+  }
+  private function getOptions($config) {
+    return [
+      'username' => $config['user'],
+      'password' => $config['pass'],
+      'ssl' => false,
+      'readPreference' => 'primary'
+    ];
   }
 }
