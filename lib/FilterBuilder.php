@@ -260,6 +260,10 @@ class FilterBuilder
    */
   public function quickSearch(array $headers, string $value): FilterBuilder
   {
+    $integerValue = null;
+    if ($this->isNumeric($value)) {
+      $integerValue = $this->getNumeric($value);
+    }
     if (strlen($value) == 0 || count($headers) == 0) {
       return $this;
     }
@@ -267,7 +271,11 @@ class FilterBuilder
     $filter = [];
     foreach($headers as $header) {
       $filter['$or'][] = [$header => $regex];
+      if(!empty($integerValue)) {
+        $filter['$or'][] = [$header => $integerValue];
+      }
     }
+
     $this->filters = array_merge($this->filters, $filter);
     return $this;
   }
@@ -278,7 +286,7 @@ class FilterBuilder
    * @param  string $value
    * @return Regex
    */
-  private function getRegex(string $value): Regex
+  private function  getRegex(string $value): Regex
   {
     $value = $this->getStartDelimiter($value);
     $value = $this->getEndDelimiter($value);
@@ -401,5 +409,28 @@ class FilterBuilder
       $gluedFilter[$glue][] = $filter->getFilters();
     }
     return $gluedFilter;
+  }
+
+  /**
+   * Convert to number
+   * @param $val
+   * @return int|string
+   */
+  private function getNumeric($val)
+  {
+    if (is_numeric($val)) {
+      return $val + 0;
+    }
+    return 0;
+  }
+
+  /**
+   * Eval number
+   * @param $value
+   * @return bool
+   */
+  private function isNumeric($value)
+  {
+    return is_numeric($value);
   }
 }

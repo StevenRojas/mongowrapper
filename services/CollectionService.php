@@ -101,6 +101,20 @@ class CollectionService
   }
 
   /**
+   * @param array $_id
+   * @param array $fields
+   * @param string $collectionName
+   * @return mixed
+   * @throws Exception
+   */
+  public function updateOne(array $_id, array $fields, string $collectionName) {
+    if (!$this->wrapper->connect()) {
+      throw new Exception('Unable to connect to MongoDB Server');
+    }
+    $execute = ['$set' => $fields ];
+    return $this->wrapper->updateOne($_id, $execute, $collectionName);
+  }
+  /**
    * validate and set pagination
    *
    * @param  array $pagination

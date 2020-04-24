@@ -169,6 +169,14 @@ class MongoDbWrapper
       throw new Exception($e->getMessage());
     }
   }
+
+  public function updateOne(array $_id, $execute, $collectionName) {
+    \LyLogProcess::log("Updating in :" . $this->database . " Collection:" . $collectionName );
+    $collection = $this->client->selectCollection($this->database, $collectionName);
+    return $collection->updateOne($_id, $execute);
+  }
+
+
   private function getOptions($config) {
     return [
       'username' => $config['user'],
