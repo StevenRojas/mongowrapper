@@ -12,11 +12,11 @@ class ImporterService
   /**
    * @var string
    */
+  public $wrapper;
   private $filename;
-
   public function __construct(MongoDbWrapper $mondgoDbWrapper) {
     $this->wrapper = $mondgoDbWrapper;
-    $this->collectionService = new CollectionService($this->wrapper);
+//    $this->collectionService = new CollectionService($this->wrapper);
   }
 
   /**
