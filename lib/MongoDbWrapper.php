@@ -173,7 +173,20 @@ class MongoDbWrapper
   public function updateOne(array $_id, $execute, $collectionName) {
     \LyLogProcess::log("Updating in :" . $this->database . " Collection:" . $collectionName );
     $collection = $this->client->selectCollection($this->database, $collectionName);
-    return $collection->updateOne($_id, $execute);
+    $result = $collection->updateOne($_id, $execute);
+    \LyLogProcess::log("Matched documents :" . $result->getMatchedCount() . " Collection:" . $collectionName );
+    \LyLogProcess::log("Modified documents :" . $result->getModifiedCount() . " Collection:" . $collectionName );
+    return $result;
+  }
+
+  public function updateMany($filters, $execute, $collectionName) {
+    \LyLogProcess::log("Updating Many in :" . $this->database . " Collection:" . $collectionName );
+    $collection = $this->client->selectCollection($this->database, $collectionName);
+    $result = $collection->updateMany($filters, $execute);
+    \LyLogProcess::log("Matched documents :" . $result->getMatchedCount() . " Collection:" . $collectionName );
+    \LyLogProcess::log("Modified documents :" . $result->getModifiedCount() . " Collection:" . $collectionName );
+
+    return $result;
   }
 
 

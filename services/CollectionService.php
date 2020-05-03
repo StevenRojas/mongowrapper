@@ -114,6 +114,22 @@ class CollectionService
     $execute = ['$set' => $fields ];
     return $this->wrapper->updateOne($_id, $execute, $collectionName);
   }
+
+  /**
+   * Update a lot pages using bach operation
+   * @param array $filters
+   * @param array $fields
+   * @param string $collectionName
+   * @return mixed
+   * @throws Exception
+   */
+  public function updateMany(array $filters, array $fields, string $collectionName) {
+    if (!$this->wrapper->connect()) {
+      throw new Exception('Unable to connect to MongoDB Server');
+    }
+    $execute = ['$set' => $fields ];
+    return $this->wrapper->updateMany($filters, $execute, $collectionName);
+  }
   /**
    * validate and set pagination
    *

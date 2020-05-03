@@ -30,7 +30,25 @@ class FilterBuilder
     $this->filters = [];
     return $this;
   }
-  
+
+  /**
+   * Equal operator
+   *
+   * @param  string $field
+   * @param  array $values
+   * @return FilterBuilder
+   */
+  public function equalArray(string $field, array $values): FilterBuilder
+  {
+    $filter = [];
+    foreach ($values as $value) {
+      $filter['$or'][] = [$field => $value];
+
+    }
+    $this->filters = array_merge($this->filters, $filter);
+    return $this;
+  }
+
   /**
    * Equal operator
    *
@@ -256,9 +274,10 @@ class FilterBuilder
    *
    * @param  array $headers
    * @param  string $value
+   * @param array $addOrs
    * @return FilterBuilder
    */
-  public function quickSearch(array $headers, string $value): FilterBuilder
+  public function quickSearch(array $headers, string $value, array $addOrs=array()): FilterBuilder
   {
     $integerValue = null;
     if ($this->isNumeric($value)) {
@@ -275,11 +294,29 @@ class FilterBuilder
         $filter['$or'][] = [$header => $integerValue];
       }
     }
+    if (!empty($addOrs)) {
+      foreach ($addOrs as $addOr) {
+        $filter['$or'][] = $addOr;
+      }
+    }
 
     $this->filters = array_merge($this->filters, $filter);
     return $this;
   }
-  
+
+  /**
+   * Get regex expression
+   *
+   * @param  string $value
+   * @return Regex
+   */
+  public function  getStrictRegex(string $value): Regex
+  {
+    $value = $this->getStartDelimiter($value);
+    $value = $this->getEndDelimiter($value);
+    return new Regex($value);
+  }
+
   /**
    * Get regex expression
    *
